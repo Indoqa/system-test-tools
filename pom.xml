@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Indoqa Software Design und Beratung GmbH (Indoqa) under
+  one or more contributor license agreements. See the NOTICE file distributed
+  with this work for additional information regarding copyright ownership.
+  Indoqa licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.indoqa</groupId>
+    <artifactId>indoqa-oss-parent</artifactId>
+    <version>4</version>
+  </parent>  
+
+  <groupId>com.indoqa</groupId>
+  <artifactId>system-test-tools</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  
+  <name>Junit System Test Tools</name>
+  <url>https://github.com/indoqa/system-test-tools</url>
+  <description>Tools that help to run system tests.</description>
+  
+  <scm>
+    <connection>scm:git:git@github.com:Indoqa/system-test-tools.git</connection>
+    <developerConnection>scm:git:git@github.com:Indoqa/system-test-tools.git</developerConnection>
+    <url>https://github.com/Indoqa/system-test-tools</url>
+    <tag>HEAD</tag>
+  </scm>
+
+
+  <properties>
+    <project.build.compiler.version>1.8</project.build.compiler.version>
+    <junit-version>4.12</junit-version>
+    <commons-exec-version>1.1</commons-exec-version>
+    <commons-io-version>2.4</commons-io-version>
+    <commons-lang-version>3.4</commons-lang-version>
+    <commons-codec-version>1.10</commons-codec-version>
+    <zt-exec-version>1.8</zt-exec-version>
+  </properties>  
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-exec</artifactId>
+      <version>${commons-exec-version}</version>
+    </dependency>  
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io-version}</version>
+    </dependency>  
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang-version}</version>
+    </dependency>  
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${commons-codec-version}</version>
+    </dependency>    
+    <dependency>
+      <groupId>org.zeroturnaround</groupId>
+      <artifactId>zt-exec</artifactId>
+      <version>${zt-exec-version}</version>    
+    </dependency>    
+  </dependencies>
+
+</project>
