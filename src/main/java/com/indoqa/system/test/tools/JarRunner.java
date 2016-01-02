@@ -210,16 +210,9 @@ public class JarRunner extends ExternalResource {
         return resultLine -> resultLine.contains(this.processKey);
     }
 
-    private ProcessExecutor createForceKillCommand(String pid) {
-        if (OS.isFamilyWindows()) {
-            return new ProcessExecutor().command("taskkill", "/F", "/PID", pid);
-        }
-        return new ProcessExecutor().command("kill", "-9", pid);
-    }
-
     private ProcessExecutor createKillCommand(String pid) {
         if (OS.isFamilyWindows()) {
-            return new ProcessExecutor().command("taskkill", "/PID", pid);
+   		    return new ProcessExecutor().command("taskkill", "/F", "/PID", pid);
         }
         return new ProcessExecutor().command("kill", pid);
     }
@@ -235,7 +228,6 @@ public class JarRunner extends ExternalResource {
 
         try {
             String jpsResult = new ProcessExecutor().command(jpsCommand, "-mlvV").readOutput(true).execute().outputUTF8();
-
             Stream<String> linesStream = Arrays.stream(jpsResult.split("\\r?\\n"));
 
             return linesStream
@@ -272,16 +264,9 @@ public class JarRunner extends ExternalResource {
 
     private void killProcess(String pid, String command) throws IOException, InterruptedException, TimeoutException {
         LOGGER.info("Going to kill process with pid {} (Java command: {})", pid, command);
-        ProcessResult killResult = this.createKillCommand(pid).execute();
+        ProcessResult killResult = this.createKillCommand(pid).environment(System.getenv()).execute();
         if (killResult.getExitValue() == 0) {
             LOGGER.info("Killed process with pid {}", pid);
-            return;
-        }
-
-        LOGGER.info("Going to kill process with pid {} with force (Java command: {})", pid, command);
-        ProcessResult forceKillResult = this.createForceKillCommand(pid).execute();
-        if (forceKillResult.getExitValue() == 0) {
-            LOGGER.info("Killed process with pid {} with force.", pid);
             return;
         }
 
@@ -310,7 +295,7 @@ public class JarRunner extends ExternalResource {
 
         try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
-            executor.execute(cmdLine, Collections.emptyMap(), handler);
+            executor.execute(cmdLine, System.getenv(), handler);
 
             if (handler.hasResult() && handler.getExitValue() != 0) {
                 fail("Error while executing Java command '" + command + ". The command returned with exit value "
