@@ -29,7 +29,10 @@ import java.io.PrintStream;
 import java.net.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -212,7 +215,7 @@ public class JarRunner extends ExternalResource {
 
     private ProcessExecutor createKillCommand(String pid) {
         if (OS.isFamilyWindows()) {
-   		    return new ProcessExecutor().command("taskkill", "/F", "/PID", pid);
+            return new ProcessExecutor().command("taskkill", "/F", "/PID", pid);
         }
         return new ProcessExecutor().command("kill", pid);
     }
@@ -298,11 +301,10 @@ public class JarRunner extends ExternalResource {
             executor.execute(cmdLine, System.getenv(), handler);
 
             if (handler.hasResult() && handler.getExitValue() != 0) {
-                fail("Error while executing Java command '" + command + ". The command returned with exit value "
-                    + handler.getExitValue() + ". Exception: " + handler.getException());
+                fail(
+                    "Error while executing Java command '" + command + ". The command returned with exit value "
+                        + handler.getExitValue() + ". Exception: " + handler.getException());
             }
-        } catch (ExecuteException e) {
-            fail("Error while executing Java command: " + command + " (" + e.getMessage() + ")");
         } catch (IOException e) {
             fail("Error while executing Java command: " + command + " (" + e.getMessage() + ")");
         }
