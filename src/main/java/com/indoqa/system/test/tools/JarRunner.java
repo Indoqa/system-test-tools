@@ -26,7 +26,12 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,7 +43,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.apache.commons.exec.*;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.OS;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
@@ -125,6 +134,10 @@ public class JarRunner extends ExternalResource {
         this.cleanJavaProcesses();
     }
 
+    protected Path getJavaRunnablePath() {
+        return this.javaRunnablePath;
+    }
+
     protected void run() {
         this.initializeJavaHome();
         this.initializeProcessKey();
@@ -176,8 +189,7 @@ public class JarRunner extends ExternalResource {
     }
 
     private String buildStartCommand(String identifier) {
-        StringBuilder commandBuilder = new StringBuilder()
-            .append(this.javaHome)
+        StringBuilder commandBuilder = new StringBuilder().append(this.javaHome)
             .append(separator)
             .append("bin")
             .append(separator)
@@ -185,8 +197,7 @@ public class JarRunner extends ExternalResource {
 
         this.runnableSysProps.forEach((key, value) -> commandBuilder.append(" -D").append(key).append("=").append(value));
 
-        return commandBuilder
-            .append(" -D")
+        return commandBuilder.append(" -D")
             .append(this.processKey)
             .append(" -jar ")
             .append(this.javaRunnablePath)
@@ -221,8 +232,7 @@ public class JarRunner extends ExternalResource {
     }
 
     private Map<String, String> findJavaProcesses() {
-        String jpsCommand = new StringBuilder()
-            .append(this.javaHome)
+        String jpsCommand = new StringBuilder().append(this.javaHome)
             .append(separator)
             .append("bin")
             .append(separator)
@@ -233,8 +243,7 @@ public class JarRunner extends ExternalResource {
             String jpsResult = new ProcessExecutor().command(jpsCommand, "-mlvV").readOutput(true).execute().outputUTF8();
             Stream<String> linesStream = Arrays.stream(jpsResult.split("\\r?\\n"));
 
-            return linesStream
-                .filter(this.containsProcessKey())
+            return linesStream.filter(this.containsProcessKey())
                 .collect(toMap(JarRunner::extractPid, JarRunner::extractCommandFromJpsLine));
         } catch (InvalidExitValueException | IOException | InterruptedException | TimeoutException e) {
             fail("Error while cleaning Java processes: " + e.getMessage());
@@ -301,8 +310,7 @@ public class JarRunner extends ExternalResource {
             executor.execute(cmdLine, System.getenv(), handler);
 
             if (handler.hasResult() && handler.getExitValue() != 0) {
-                fail(
-                    "Error while executing Java command '" + command + ". The command returned with exit value "
+                fail("Error while executing Java command '" + command + ". The command returned with exit value "
                         + handler.getExitValue() + ". Exception: " + handler.getException());
             }
         } catch (IOException e) {

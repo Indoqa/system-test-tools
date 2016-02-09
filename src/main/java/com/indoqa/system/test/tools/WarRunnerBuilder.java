@@ -21,15 +21,20 @@ import static org.junit.Assert.fail;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class JarRunnerBuilder extends AbstractRunnerBuilder<JarRunner> {
+public class WarRunnerBuilder extends AbstractRunnerBuilder<WarRunner> {
 
-    public JarRunnerBuilder(Path javaRunnablePath) {
-        requireNonNull(javaRunnablePath, "The Jar runner needs a path to the Java runnable.");
+    public WarRunnerBuilder(Path warArchivePath) {
+        requireNonNull(warArchivePath, "The War runner needs a path to the WAR archive.");
 
-        if (!Files.exists(javaRunnablePath)) {
-            fail("The Java runnable " + javaRunnablePath.toAbsolutePath().toString() + " does not exist.");
+        if (!Files.exists(warArchivePath)) {
+            fail("The War archive " + warArchivePath.toAbsolutePath().toString() + " does not exist.");
         }
 
-        this.runner = new JarRunner(javaRunnablePath);
+        this.runner = new WarRunner(warArchivePath);
+    }
+
+    public WarRunnerBuilder setHttpPort(int httpPort) {
+        this.runner.setHttpPort(httpPort);
+        return this;
     }
 }
