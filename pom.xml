@@ -50,6 +50,7 @@
     <commons-lang-version>3.4</commons-lang-version>
     <commons-codec-version>1.10</commons-codec-version>
     <zt-exec-version>1.8</zt-exec-version>
+    <jetty-version>9.3.7.v20160115</jetty-version>
   </properties>  
 
   <dependencies>
@@ -82,7 +83,70 @@
       <groupId>org.zeroturnaround</groupId>
       <artifactId>zt-exec</artifactId>
       <version>${zt-exec-version}</version>    
-    </dependency>    
+    </dependency>
+    <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-runner</artifactId>
+        <version>${jetty-version}</version>
+    </dependency>
   </dependencies>
-
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.indoqa</groupId>
+        <artifactId>cycle-maven-plugin</artifactId>
+        <configuration>
+          <excludedPackages>
+            <excludedPackage>org.eclipse.jetty.start</excludedPackage>
+          </excludedPackages>
+        </configuration>
+      </plugin>     
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.eclipse.jetty</groupId>
+                  <artifactId>jetty-runner</artifactId>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.directory}/container</outputDirectory>
+                  <destFileName>jetty-runner.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-jetty</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>add-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/container</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>      
+    </plugins>
+  </build>  
 </project>
