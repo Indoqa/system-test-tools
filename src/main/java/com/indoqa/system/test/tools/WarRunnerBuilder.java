@@ -65,6 +65,13 @@ public class WarRunnerBuilder {
         return this;
     }
 
+    public WarRunnerBuilder addOptions(String... options) {
+        requireNonNull(options, "The option must not be null.");
+
+        this.warRunner.addJavaOptions(options);
+        return this;
+    }
+
     public WarRunnerBuilder addSysProp(String name, String value) {
         requireNonNull(name, "The name of the system property must not be null.");
         requireNonNull(value, "The value of the system property must not be null.");

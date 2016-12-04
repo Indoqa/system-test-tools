@@ -78,6 +78,7 @@ public class JarRunner extends ExternalResource {
     private String processKey;
     private String javaHome;
     private Map<String, String> runnableSysProps = new ConcurrentHashMap<>();
+    private List<String> runnableOptions = new ArrayList<>();
     private List<String> arguments = new ArrayList<>();
     private PrintStream out = DEFAULT_OUT;
     private PrintStream err = DEFAULT_ERR;
@@ -123,6 +124,10 @@ public class JarRunner extends ExternalResource {
 
     protected void addArguments(String... arg) {
         this.arguments.addAll(Arrays.asList(arg));
+    }
+
+    protected void addJavaOptions(String... options) {
+        this.runnableOptions.addAll(Arrays.asList(options));
     }
 
     protected void addSysProp(String name, String value) {
@@ -188,12 +193,14 @@ public class JarRunner extends ExternalResource {
         }
     }
 
-    private String buildStartCommand(String identifier) {
+    private String buildStartCommand() {
         StringBuilder commandBuilder = new StringBuilder().append(this.javaHome)
             .append(separator)
             .append("bin")
             .append(separator)
             .append("java");
+
+        this.runnableOptions.forEach((option) -> commandBuilder.append(" -").append(option));
 
         this.runnableSysProps.forEach((key, value) -> commandBuilder.append(" -D").append(key).append("=").append(value));
 
@@ -297,7 +304,7 @@ public class JarRunner extends ExternalResource {
     }
 
     private void startProcess() {
-        String command = this.buildStartCommand(this.processKey);
+        String command = this.buildStartCommand();
         CommandLine cmdLine = CommandLine.parse(command);
         LOGGER.info("Executing " + cmdLine);
 
