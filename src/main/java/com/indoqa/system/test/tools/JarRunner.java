@@ -22,16 +22,12 @@ import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -43,11 +39,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecuteResultHandler;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.OS;
-import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.*;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
@@ -59,9 +51,12 @@ import org.zeroturnaround.exec.ProcessResult;
 public class JarRunner extends ExternalResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JarRunner.class);
+
     private static final long SECOND_TO_MILLIS = SECONDS.toMillis(1);
     private static final String PROCESS_KEY_PREFIX = "process-key";
     private static final String ENV_VAR_JAVA_HOME = "JAVA_HOME";
+    private static final String CHAR_QUOTE = "\"";
+    private static final String CHAR_SPACE = " ";
 
     private static final Path DEFAULT_WORKING_DIR = Paths.get(".");
     private static final PrintStream DEFAULT_OUT = System.out;
@@ -101,17 +96,42 @@ public class JarRunner extends ExternalResource {
         fail("The integration tests only run on Unix, MacOS or Windows based operating systems at present.");
     }
 
+    private static ProcessExecutor createKillCommand(String pid) {
+        if (OS.isFamilyWindows()) {
+            return new ProcessExecutor().command("taskkill", "/F", "/PID", pid);
+        }
+        return new ProcessExecutor().command("kill", pid);
+    }
+
     private static String extractCommandFromJpsLine(String jpsLine) {
-        List<String> parts = new ArrayList<>(Arrays.asList(jpsLine.split(" ")));
+        List<String> parts = new ArrayList<>(Arrays.asList(jpsLine.split(CHAR_SPACE)));
         if (parts.size() > 1) {
             parts.remove(0);
-            return StringUtils.join(parts, " ");
+            return StringUtils.join(parts, CHAR_SPACE);
         }
         return "unknown command";
     }
 
     private static String extractPid(String line) {
-        return line.split(" ")[0];
+        return line.split(CHAR_SPACE)[0];
+    }
+
+    private static void killProcess(String pid, String command) throws IOException, InterruptedException, TimeoutException {
+        LOGGER.info("Going to kill process with pid {} (Java command: {})", pid, command);
+        ProcessResult killResult = createKillCommand(pid).environment(System.getenv()).execute();
+        if (killResult.getExitValue() == 0) {
+            LOGGER.info("Killed process with pid {}", pid);
+            return;
+        }
+
+        fail("Could not 'force kill' the process with pid " + pid);
+    }
+
+    private static CharSequence quote(String value) {
+        if (contains(value, CHAR_SPACE)) {
+            return new StringBuilder(CHAR_QUOTE).append(value).append(CHAR_QUOTE);
+        }
+        return value;
     }
 
     private static void sleep(int sleep) {
@@ -194,22 +214,24 @@ public class JarRunner extends ExternalResource {
     }
 
     private String buildStartCommand() {
-        StringBuilder commandBuilder = new StringBuilder().append(this.javaHome)
+        StringBuilder commandBuilder = new StringBuilder()
+            .append(this.javaHome)
             .append(separator)
             .append("bin")
             .append(separator)
             .append("java");
 
-        this.runnableOptions.forEach((option) -> commandBuilder.append(" -").append(option));
+        this.runnableOptions.forEach((option) -> commandBuilder.append(" -").append(quote(option)));
 
-        this.runnableSysProps.forEach((key, value) -> commandBuilder.append(" -D").append(key).append("=").append(value));
+        this.runnableSysProps.forEach((key, value) -> commandBuilder.append(" -D").append(key).append("=").append(quote(value)));
 
-        return commandBuilder.append(" -D")
+        return commandBuilder
+            .append(" -D")
             .append(this.processKey)
             .append(" -jar ")
             .append(this.javaRunnablePath)
-            .append(" ")
-            .append(StringUtils.join(this.arguments, " "))
+            .append(CHAR_SPACE)
+            .append(join(this.arguments, CHAR_SPACE))
             .toString();
     }
 
@@ -219,7 +241,7 @@ public class JarRunner extends ExternalResource {
             LOGGER.info("Found {} Java process(es) with key '" + this.processKey + "' to be killed.", pids.size());
 
             for (String eachPid : pids.keySet()) {
-                this.killProcess(eachPid, pids.get(eachPid));
+                killProcess(eachPid, pids.get(eachPid));
             }
         } catch (InvalidExitValueException | IOException | InterruptedException | TimeoutException e) {
             LOGGER.error("Error while cleaning Java processes.", e);
@@ -231,15 +253,9 @@ public class JarRunner extends ExternalResource {
         return resultLine -> resultLine.contains(this.processKey);
     }
 
-    private ProcessExecutor createKillCommand(String pid) {
-        if (OS.isFamilyWindows()) {
-            return new ProcessExecutor().command("taskkill", "/F", "/PID", pid);
-        }
-        return new ProcessExecutor().command("kill", pid);
-    }
-
     private Map<String, String> findJavaProcesses() {
-        String jpsCommand = new StringBuilder().append(this.javaHome)
+        String jpsCommand = new StringBuilder()
+            .append(this.javaHome)
             .append(separator)
             .append("bin")
             .append(separator)
@@ -250,7 +266,8 @@ public class JarRunner extends ExternalResource {
             String jpsResult = new ProcessExecutor().command(jpsCommand, "-mlvV").readOutput(true).execute().outputUTF8();
             Stream<String> linesStream = Arrays.stream(jpsResult.split("\\r?\\n"));
 
-            return linesStream.filter(this.containsProcessKey())
+            return linesStream
+                .filter(this.containsProcessKey())
                 .collect(toMap(JarRunner::extractPid, JarRunner::extractCommandFromJpsLine));
         } catch (InvalidExitValueException | IOException | InterruptedException | TimeoutException e) {
             fail("Error while cleaning Java processes: " + e.getMessage());
@@ -281,17 +298,6 @@ public class JarRunner extends ExternalResource {
         this.processKey = processKeyBuilder.toString();
     }
 
-    private void killProcess(String pid, String command) throws IOException, InterruptedException, TimeoutException {
-        LOGGER.info("Going to kill process with pid {} (Java command: {})", pid, command);
-        ProcessResult killResult = this.createKillCommand(pid).environment(System.getenv()).execute();
-        if (killResult.getExitValue() == 0) {
-            LOGGER.info("Killed process with pid {}", pid);
-            return;
-        }
-
-        fail("Could not 'force kill' the process with pid " + pid);
-    }
-
     private void preInitialization() {
         if (this.preInitializationAction == null) {
             LOGGER.info("There is no pre-initialization action.");
@@ -317,7 +323,8 @@ public class JarRunner extends ExternalResource {
             executor.execute(cmdLine, System.getenv(), handler);
 
             if (handler.hasResult() && handler.getExitValue() != 0) {
-                fail("Error while executing Java command '" + command + ". The command returned with exit value "
+                fail(
+                    "Error while executing Java command '" + command + ". The command returned with exit value "
                         + handler.getExitValue() + ". Exception: " + handler.getException());
             }
         } catch (IOException e) {
