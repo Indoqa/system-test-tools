@@ -72,6 +72,10 @@ public class JarRunnerBuilder {
         return this;
     }
 
+    public JarRunnerBuilder addSysProp(String name, int value) {
+        return this.addSysProp(name, String.valueOf(value));
+    }
+
     public JarRunnerBuilder addSysProp(String name, String value) {
         requireNonNull(name, "The name of the system property must not be null.");
         requireNonNull(value, "The value of the system property must not be null.");
