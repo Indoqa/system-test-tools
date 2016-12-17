@@ -238,7 +238,7 @@ public class JarRunner extends ExternalResource {
     private void cleanJavaProcesses() {
         try {
             Map<String, String> pids = this.findJavaProcesses();
-            LOGGER.info("Found {} Java process(es) with key '" + this.processKey + "' to be killed.", pids.size());
+            LOGGER.info("Found {} Java process(es) with key '{}' to be killed.", pids.size(), this.processKey);
 
             for (String eachPid : pids.keySet()) {
                 killProcess(eachPid, pids.get(eachPid));
@@ -341,7 +341,7 @@ public class JarRunner extends ExternalResource {
         String urlString = null;
         try {
             urlString = this.checkAddress.toURI().toASCIIString();
-            LOGGER.info("Waiting up to " + this.waitForStartupInSeconds + " seconds for '" + urlString + "' to respond.");
+            LOGGER.info("Waiting up to {} seconds for '{}' to respond.", this.waitForStartupInSeconds, urlString);
 
             long intervalls = this.waitForStartupInSeconds * SECOND_TO_MILLIS / this.checkIntervall;
             for (int i = 0; i < intervalls; i++) {
@@ -351,12 +351,12 @@ public class JarRunner extends ExternalResource {
 
                 try {
                     int responseCode = connection.getResponseCode();
-                    LOGGER.info("Accessing '" + urlString + "': attempt=" + i + ", responseCode=" + responseCode);
+                    LOGGER.info("Accessing '{}': attempt={}, responseCode={}", urlString, i, responseCode);
                     if (responseCode == HTTP_OK) {
                         break;
                     }
                 } catch (SocketTimeoutException | ConnectException e) {
-                    LOGGER.info("Accessing '" + urlString + "': attempt=" + i + ", exception=" + e.getMessage());
+                    LOGGER.info("Accessing '{}': attempt={}, exception={}", urlString, i, e.getMessage());
                 }
                 sleep(this.checkIntervall);
             }
