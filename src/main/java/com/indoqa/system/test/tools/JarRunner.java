@@ -171,7 +171,7 @@ public class JarRunner extends ExternalResource {
         this.preInitialization();
 
         this.startProcess();
-        this.waitForAddress();
+        this.waitForCheckAddress();
         this.alwaysWait();
     }
 
@@ -247,6 +247,37 @@ public class JarRunner extends ExternalResource {
             LOGGER.error("Error while cleaning Java processes.", e);
             fail(e.getMessage());
         }
+    }
+
+    private boolean checkAddress() {
+        String urlString = null;
+        try {
+            urlString = this.checkAddress.toURI().toASCIIString();
+            LOGGER.info("Waiting up to {} seconds for '{}' to respond.", this.waitForStartupInSeconds, urlString);
+
+            long intervalls = this.waitForStartupInSeconds * SECOND_TO_MILLIS / this.checkIntervall;
+            for (int i = 0; i < intervalls; i++) {
+                HttpURLConnection connection = (HttpURLConnection) this.checkAddress.openConnection();
+                connection.setConnectTimeout(DEFAULT_HTTP_TIMEOUTS);
+                connection.setReadTimeout(DEFAULT_HTTP_TIMEOUTS);
+
+                try {
+                    int responseCode = connection.getResponseCode();
+                    LOGGER.info("Accessing '{}': attempt={}, responseCode={}", urlString, i, responseCode);
+                    if (responseCode == HTTP_OK) {
+                        return true;
+                    }
+                } catch (SocketTimeoutException | ConnectException e) {
+                    LOGGER.info("Accessing '{}': attempt={}, exception={}", urlString, i, e.getMessage());
+                }
+                sleep(this.checkIntervall);
+            }
+        } catch (MalformedURLException | URISyntaxException e) {
+            fail("Invalid address '" + urlString + "'. exception=" + e.getMessage());
+        } catch (IOException e) {
+            fail("Failed to wait for response from '" + urlString + "'. exception=" + e.getMessage());
+        }
+        return false;
     }
 
     private Predicate<String> containsProcessKey() {
@@ -332,38 +363,15 @@ public class JarRunner extends ExternalResource {
         }
     }
 
-    private void waitForAddress() {
+    private void waitForCheckAddress() {
         if (this.checkAddress == null) {
             LOGGER.info("No check URL set.");
             return;
         }
 
-        String urlString = null;
-        try {
-            urlString = this.checkAddress.toURI().toASCIIString();
-            LOGGER.info("Waiting up to {} seconds for '{}' to respond.", this.waitForStartupInSeconds, urlString);
-
-            long intervalls = this.waitForStartupInSeconds * SECOND_TO_MILLIS / this.checkIntervall;
-            for (int i = 0; i < intervalls; i++) {
-                HttpURLConnection connection = (HttpURLConnection) this.checkAddress.openConnection();
-                connection.setConnectTimeout(DEFAULT_HTTP_TIMEOUTS);
-                connection.setReadTimeout(DEFAULT_HTTP_TIMEOUTS);
-
-                try {
-                    int responseCode = connection.getResponseCode();
-                    LOGGER.info("Accessing '{}': attempt={}, responseCode={}", urlString, i, responseCode);
-                    if (responseCode == HTTP_OK) {
-                        break;
-                    }
-                } catch (SocketTimeoutException | ConnectException e) {
-                    LOGGER.info("Accessing '{}': attempt={}, exception={}", urlString, i, e.getMessage());
-                }
-                sleep(this.checkIntervall);
-            }
-        } catch (MalformedURLException | URISyntaxException e) {
-            fail("Invalid address '" + urlString + "'. exception=" + e.getMessage());
-        } catch (IOException e) {
-            fail("Failed to wait for response from '" + urlString + "'. exception=" + e.getMessage());
+        boolean isAvailable = this.checkAddress();
+        if (!isAvailable) {
+            fail("The check address '" + this.checkAddress + "' could not be reached.");
         }
     }
 }
