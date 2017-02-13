@@ -28,7 +28,7 @@
 
   <groupId>com.indoqa</groupId>
   <artifactId>system-test-tools</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   
   <name>Junit System Test Tools</name>
   <url>https://github.com/indoqa/system-test-tools</url>
@@ -38,7 +38,7 @@
     <connection>scm:git:git@github.com:Indoqa/system-test-tools.git</connection>
     <developerConnection>scm:git:git@github.com:Indoqa/system-test-tools.git</developerConnection>
     <url>https://github.com/Indoqa/system-test-tools</url>
-    <tag>system-test-tools-1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
 
