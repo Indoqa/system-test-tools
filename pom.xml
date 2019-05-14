@@ -147,6 +147,18 @@
           </execution>
         </executions>
       </plugin>      
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/bin/*</exclude>
+            <exclude>CHANGELOG.md</exclude>
+            <exclude>README.md</exclude>
+            <exclude>CONTRIBUTORS.txt</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>  
 </project>
